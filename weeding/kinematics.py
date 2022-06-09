@@ -7,8 +7,10 @@ import roslibpy
 
 class Kinematics():
     def __init__(self):
+        self.sleeper = 1
         self.canbus = None
         self.bridge = roslibpy.Ros(host="150.140.148.140", port=2233)
+        #self.bridge = roslibpy.Ros(host="10.42.0.1", port=9090)
         self.dbc = """VERSION ""
         BO_ 2365475321 GBSD: 8 Vector__XXX
          SG_ GroundBasedMachineSpeed : 0|16@1+ (0.001,0) [0|64.255] "m/s" Vector__XXX
@@ -20,7 +22,7 @@ class Kinematics():
         self.gbsd = cantools.db.load_string(self.dbc, 'dbc').get_message_by_name("GBSD")
         self.gnss = cantools.db.load_string(self.dbc, 'dbc').get_message_by_name("GNSSPositionRapidUpdate")
 
-        self.speed_topic = roslibpy.Topic(self.bridge, '/lsp4/speed', 'std_msgs/Float32')
+        self.speed_topic = roslibpy.Topic(self.bridge, '/lsp1/speed', 'std_msgs/Float32')
         self.longitude_topic = roslibpy.Topic(self.bridge, '/lsp1/longitude', 'std_msgs/Float32')
         self.latitude_topic = roslibpy.Topic(self.bridge, '/lsp1/latitude', 'std_msgs/Float32')
         self.odometry_topic = roslibpy.Topic(self.bridge, '/lsp1/odometry', 'nav_msgs/Odometry')
@@ -44,6 +46,9 @@ class Kinematics():
     def send_topic(self, topic, message):
         topic.publish(roslibpy.Message(message))
         print(message)
+ 
+    def sleep(self):
+        time.sleep(self.sleeper)
 
 
 def main(args=None):
@@ -83,7 +88,7 @@ def main(args=None):
             },
             "header": {"frame_id": "odom"}
         })
-        time.sleep(1)
+        # kin.sleep()
 
 
 if __name__ == '__main__':
