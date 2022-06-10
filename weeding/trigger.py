@@ -29,7 +29,7 @@ def main(args=None):
             time.sleep(5)
 
     while True:
-        trig.send_topic(trig.trigger, {'data': False})
+        trig.send_topic(trig.trigger, {'data': True})
         trig.sleep()
 
 
