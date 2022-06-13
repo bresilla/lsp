@@ -1,46 +1,70 @@
-import sys
 import cv2
-import time
-import os
-
+import depthai as dai
+import contextlib
 import datetime
-
-x = datetime.datetime.now()
-date_folder = "C:\\Cam\\" + str(x.strftime("%Y%m%d"))
-
-
-if not os.path.exists(date_folder):
-    os.makedirs(date_folder)
+import os
+import time
 
 
-class Stream():
-    def __init__(self):
-        self.sleeper = 1
+if os.name == 'nt': 
+    sep = "\\"
+    base_folder = "C:\\Cam\\"
+else:
+    sep = "/"
+    base_folder = "/home/bresilla/depthai/vid" 
 
-    def sleep(self):
-        time.sleep(self.sleeper)
+timenow = datetime.datetime.now()
+folder_name = base_folder + sep + str(timenow.strftime("%Y%m%d")) + sep
+
+# This can be customized to pass multiple parameters
+def getPipeline(device_type):
+    pipeline = dai.Pipeline()
+    cam_rgb = pipeline.create(dai.node.ColorCamera)
+    cam_rgb.setPreviewSize(1920, 1080)
+    cam_rgb.setBoardSocket(dai.CameraBoardSocket.RGB)
+    cam_rgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
+    cam_rgb.setInterleaved(False)
+
+    xout_rgb = pipeline.create(dai.node.XLinkOut)
+    xout_rgb.setStreamName("rgb")
+    cam_rgb.preview.link(xout_rgb.input)
+    return pipeline
+
+q_rgb_list = []
+cpt = 0
+
+with contextlib.ExitStack() as stack:
+    device_infos = dai.Device.getAllAvailableDevices()
+    if len(device_infos) == 0:
+        raise RuntimeError("No devices found!")
+    else:
+        print("Found", len(device_infos), "devices")
 
 
-def main(args=None):
-    cpt = 0
-    maxFrames = 100  # if you want 5 frames only.
+    for device_info in device_infos:
+        openvino_version = dai.OpenVINO.Version.VERSION_2021_4
+        device = stack.enter_context(dai.Device(openvino_version, device_info, False))
+        mxid = device.getMxId()
+        device_type = "OAK-D-POE"
+        pipeline = getPipeline(device_type)
+        device.startPipeline(pipeline)
 
-    try:
-        vidStream = cv2.VideoCapture(0)  # index of your camera
-    except:
-        print("problem opening input stream")
-        sys.exit(1)
+        q_rgb = device.getOutputQueue(name="rgb", maxSize=1, blocking=False)
+        stream_name = "RGB-" + mxid
 
-    while cpt < maxFrames:
+        date_folder = folder_name + stream_name + sep
+        if not os.path.exists(date_folder): os.makedirs(date_folder)
+
+        q_rgb_list.append((q_rgb, stream_name, date_folder))
+
+    while True:
         cpt += 1
-        ret, frame = vidStream.read()
-        frame_copy=frame
-        if not ret:
-            sys.exit(0)
-        cv2.imwrite(date_folder + "\\image%06i.jpg" % cpt, frame)
-        cv2.imshow("CAM", frame_copy)
+        for q_rgb, stream_name, date_folder in q_rgb_list:
+            in_rgb = q_rgb.tryGet()
+            if in_rgb is not None:
+                frame = in_rgb.getCvFrame()
+                cv2.imshow(stream_name, frame)
+                cv2.imwrite(date_folder + "image%06i.jpg" % cpt, frame)
         time.sleep(0.25)
-
-
-if __name__ == '__main__':
-    main()
+        if cv2.waitKey(1) == ord('q'):
+            break
