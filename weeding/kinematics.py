@@ -46,7 +46,7 @@ class Kinematics():
     def send_topic(self, topic, message):
         topic.publish(roslibpy.Message(message))
         print(message)
- 
+
     def sleep(self):
         time.sleep(self.sleeper)
 
@@ -56,19 +56,19 @@ def main(args=None):
 
     while kin.canbus is None:
         try:
-            print("CAN CONNECTED")
             if os.name == 'nt':
                 kin.canbus = can.interface.Bus(channel=3, bustype='vector', app_name="CANoe")
             else:
                 kin.canbus = can.interface.Bus(channel='vcan0', bustype='socketcan')
+            print("CAN CONNECTED")
         except:
             print("CAN NOT CONNECTED")
             time.sleep(5)
 
     while not kin.bridge.is_connected:
         try:
-            print("BRIDGE CONNECTED")
             kin.bridge.run()
+            print("BRIDGE CONNECTED")
         except:
             print("BRIDGE NOT CONNECTED")
             time.sleep(5)
