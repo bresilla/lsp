@@ -8,7 +8,7 @@ import time
 
 if os.name == 'nt': 
     sep = "\\"
-    base_folder = "C:\\Cam\\"
+    base_folder = "D:\\Cam\\"
 else:
     sep = "/"
     base_folder = "/home/bresilla/depthai/vid" 
@@ -40,7 +40,6 @@ with contextlib.ExitStack() as stack:
     else:
         print("Found", len(device_infos), "devices")
 
-
     for device_info in device_infos:
         openvino_version = dai.OpenVINO.Version.VERSION_2021_4
         device = stack.enter_context(dai.Device(openvino_version, device_info, False))
@@ -57,7 +56,7 @@ with contextlib.ExitStack() as stack:
 
         q_rgb_list.append((q_rgb, stream_name, date_folder))
 
-    while True:
+    while cpt < 100000:
         cpt += 1
         for q_rgb, stream_name, date_folder in q_rgb_list:
             in_rgb = q_rgb.tryGet()
@@ -65,6 +64,8 @@ with contextlib.ExitStack() as stack:
                 frame = in_rgb.getCvFrame()
                 cv2.imshow(stream_name, frame)
                 cv2.imwrite(date_folder + "image%06i.jpg" % cpt, frame)
+                cv2.imwrite(date_folder + str(timenow.strftime("%H%M%S%f")) + ".jpg", frame)
         time.sleep(0.25)
+        print(cpt)
         if cv2.waitKey(1) == ord('q'):
             break
