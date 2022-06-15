@@ -58,7 +58,8 @@ with contextlib.ExitStack() as stack:
 
     while cpt < 100000:
         cpt += 1
-        in_milisec = str(timenow.strftime("%H%M%S%f"))
+        timenow = datetime.datetime.now()
+        in_milisec = str(timenow.strftime("%H_%M_%S_%f"))
         for q_rgb, stream_name, date_folder in q_rgb_list:
             in_rgb = q_rgb.tryGet()
             if in_rgb is not None:
@@ -67,6 +68,8 @@ with contextlib.ExitStack() as stack:
                 cv2.imwrite(date_folder + "image%06i.jpg" % cpt, frame)
                 cv2.imwrite(date_folder + in_milisec + ".jpg", frame)
         time.sleep(0.25)
+        print(in_milisec)
         print(cpt)
+        print()
         if cv2.waitKey(1) == ord('q'):
             break
