@@ -77,6 +77,8 @@ def main(args=None):
         gnss_message = kin.recv_can(kin.gnss)
         gbsd_message = kin.recv_can(kin.gbsd)
 
+        print("---")
+
         kin.send_topic(kin.speed_topic, {'data': float(gbsd_message["GroundBasedMachineSpeed"])})
         kin.send_topic(kin.longitude_topic, {'data': float(gnss_message["Longitude"])})
         kin.send_topic(kin.latitude_topic, {'data': float(gnss_message["Latitude"])})
