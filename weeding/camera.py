@@ -66,7 +66,7 @@ with contextlib.ExitStack() as stack:
                 frame = in_rgb.getCvFrame()
                 cv2.imshow(stream_name, frame)
                 cv2.imwrite(date_folder + "image%06i.jpg" % cpt, frame)
-                cv2.imwrite(date_folder + "image%06i---" % cpt + in_milisec + ".jpg", frame)
+                cv2.imwrite(date_folder + "image%06i_" % cpt + in_milisec + ".jpg", frame)
         time.sleep(0.25)
         print(in_milisec)
         print(cpt)
