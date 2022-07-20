@@ -74,7 +74,7 @@ def main(args=None):
     while kin.canbus is None:
         try:
             if os.name == 'nt':
-                kin.canbus = can.interface.Bus(channel=2, bustype='vector', app_name="CANoe")
+                kin.canbus = can.interface.Bus(channel=0, bustype='vector', app_name="CANoe")
             else:
                 kin.canbus = can.interface.Bus(channel='vcan0', bustype='socketcan')
             print("CAN CONNECTED")
