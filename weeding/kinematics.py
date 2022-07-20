@@ -55,7 +55,7 @@ class Kinematics():
                 message = self.canbus.recv()
                 if message.arbitration_id == id:
                     data = message
-            except can.CanError:pose
+            except can.CanError:
                 print("MESSAGE NOT RECIEVED")
         print(data)
         return data
