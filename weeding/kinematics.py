@@ -19,9 +19,9 @@ class Kinematics():
          SG_ Latitude : 0|32@1- (1E-007,0) [-90|90] "deg" Vector__XXX
         """
 
-        self.gbsd_id = 0x0CFE49F0
+        self.gbsd_id = 0x0CFE4994
         self.gbsd = cantools.db.load_string(self.dbc, 'dbc').get_message_by_name("GBSD")
-        self.gnss_id = 0x09F8011C
+        self.gnss_id = 0x01F80194
         self.gnss = cantools.db.load_string(self.dbc, 'dbc').get_message_by_name("GNSSPositionRapidUpdate")
 
         self.speed_topic = roslibpy.Topic(self.bridge, '/lsp1/speed', 'std_msgs/Float32')
