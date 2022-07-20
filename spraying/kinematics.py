@@ -23,7 +23,9 @@ class Kinematics():
          SG_ AppRateVolumePerTime_Act m37 : 32|32@1- (1,0) [0|2147483647] "mm³/s" Vector__XXX
         """
 
+        self.gbsd_id = 0x0CFE49F0
         self.gbsd = cantools.db.load_string(self.dbc, 'dbc').get_message_by_name("GBSD")
+        self.gnss_id = 0x09F8011C
         self.gnss = cantools.db.load_string(self.dbc, 'dbc').get_message_by_name("GNSSPositionRapidUpdate")
         self.pd = cantools.db.load_string(self.dbc, 'dbc').get_message_by_name("PD")
 
@@ -43,14 +45,29 @@ class Kinematics():
         except can.CanError:
             print("COULD NOT SEND THE MESSAGE")
         print(message)
-
-    def recv_can(self, db):
+ 
+    def recv_can(self, db, id):
         data = None
-        try:
-            message = self.canbus.recv()
-            data = db.decode(message.data)
-        except can.CanError:
-            print("MESSAGE NOT RECIEVED")
+        while(data == None):
+            try:
+                message = self.canbus.recv()
+                if message.arbitration_id == id:
+                    data = db.decode(message.data)
+            except can.CanError:
+                print("MESSAGE NOT RECIEVED")
+        print(data)
+        return data
+
+    def recv_raw_can(self, id):
+        data = None
+        while(data == None):
+            try:
+                message = self.canbus.recv()
+                if message.arbitration_id == id:
+                    data = message
+            except can.CanError:
+                print("MESSAGE NOT RECIEVED")
+        print(data)
         return data
 
     def send_topic(self, topic, message):
@@ -68,7 +85,7 @@ def main(args=None):
         try:
             print("CAN CONNECTED")
             if os.name == 'nt':
-                kin.canbus = can.interface.Bus(channel=3, bustype='vector', app_name="CANoe")
+                kin.canbus = can.interface.Bus(channel=3, bustype='vector')
             else:
                 kin.canbus = can.interface.Bus(channel='vcan0', bustype='socketcan')
         except:
@@ -84,8 +101,8 @@ def main(args=None):
             time.sleep(5)
 
     while True:
-        gnss_message = kin.recv_can(kin.gnss)
-        gbsd_message = kin.recv_can(kin.gbsd)
+        gnss_message = kin.recv_can(kin.gnss, kin.gnss_id)
+        gbsd_message = kin.recv_can(kin.gbsd, kin.gbsd_id)
         pd_message = kin.recv_can(kin.pd)
 
         kin.send_topic(kin.speed_topic, {'data': float(gbsd_message["GroundBasedMachineSpeed"])})
