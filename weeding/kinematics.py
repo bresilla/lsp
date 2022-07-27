@@ -7,6 +7,7 @@ import roslibpy
 
 class Kinematics():
     def __init__(self):
+        self.iters = 50
         self.sleeper = 1
         self.canbus = None
         self.bridge = roslibpy.Ros(host="150.140.148.140", port=2233)
@@ -36,16 +37,19 @@ class Kinematics():
             print("COULD NOT SEND THE MESSAGE")
         print(message)
 
-    def recv_can(self, db, id):
+    def recv_can(self, db, id, description):
         data = None
-        while(data == None):
+        i = 0
+        while(i < self.iters):
+            i = i + 1
             try:
                 message = self.canbus.recv()
                 if message.arbitration_id == id:
                     data = db.decode(message.data)
+                    print(data)
             except can.CanError:
                 print("MESSAGE NOT RECIEVED")
-        print(data)
+        if data == None: print("MESSAGE ", description, " NOT AVALIABLE")
         return data
 
     def recv_raw_can(self, id):
@@ -91,22 +95,25 @@ def main(args=None):
             time.sleep(5)
 
     while True:
-        gnss_message = kin.recv_can(kin.gnss, kin.gnss_id)
-        gbsd_message = kin.recv_can(kin.gbsd, kin.gbsd_id)
+        gnss_message = kin.recv_can(kin.gnss, kin.gnss_id, "GNSS")
+        gbsd_message = kin.recv_can(kin.gbsd, kin.gbsd_id, "GBSD")
 
         print("---")
 
-        kin.send_topic(kin.speed_topic, {'data': float(gbsd_message["GroundBasedMachineSpeed"])})
-        kin.send_topic(kin.longitude_topic, {'data': float(gnss_message["Longitude"])})
-        kin.send_topic(kin.latitude_topic, {'data': float(gnss_message["Latitude"])})
-        kin.send_topic(kin.odometry_topic, {
-            "pose": {
+        if gbsd_message != None:
+            kin.send_topic(kin.speed_topic, {'data': float(gbsd_message["GroundBasedMachineSpeed"])})
+        if gnss_message != None:
+            kin.send_topic(kin.longitude_topic, {'data': float(gnss_message["Longitude"])})
+            kin.send_topic(kin.latitude_topic, {'data': float(gnss_message["Latitude"])})
+        if (gnss_message != None) and (gbsd_message != None):
+            kin.send_topic(kin.odometry_topic, {
                 "pose": {
-                    "position": {"x": float(gnss_message["Longitude"]), "y": float(gnss_message["Latitude"])}
-                }
-            },
-            "header": {"frame_id": "odom"}
-        })
+                    "pose": {
+                        "position": {"x": float(gnss_message["Longitude"]), "y": float(gnss_message["Latitude"])}
+                    }
+                },
+                "header": {"frame_id": "odom"}
+            })
         # kin.sleep()
 
 

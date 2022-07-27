@@ -3,11 +3,11 @@ import time
 import can
 import cantools
 import roslibpy
+import binascii
 
 
 class Kinematics():
     def __init__(self):
-        self.iters = 50
         self.sleeper = 1
         self.canbus = None
         self.bridge = roslibpy.Ros(host="150.140.148.140", port=2233)
@@ -42,20 +42,17 @@ class Kinematics():
         except can.CanError:
             print("COULD NOT SEND THE MESSAGE")
         print(message)
-
-    def recv_can(self, db, id, description):
+ 
+    def recv_can(self, db, id):
         data = None
-        i = 0
-        while(i < self.iters):
-            i = i + 1
+        while(data == None):
             try:
                 message = self.canbus.recv()
                 if message.arbitration_id == id:
                     data = db.decode(message.data)
-                    print(data)
             except can.CanError:
                 print("MESSAGE NOT RECIEVED")
-        if data == None: print("MESSAGE ", description, " NOT AVALIABLE")
+        # print(data)
         return data
 
     def recv_raw_can(self, id):
@@ -67,15 +64,32 @@ class Kinematics():
                     data = message
             except can.CanError:
                 print("MESSAGE NOT RECIEVED")
-        print(data)
         return data
 
     def send_topic(self, topic, message):
         topic.publish(roslibpy.Message(message))
-        print(message)
+        # print(message)
  
     def sleep(self):
         time.sleep(self.sleeper)
+
+    def sub_bytes(self, i, start=0, end=0):
+        i_str = hex(i)[2:]  # skip 0x part
+        i_sub = i_str[-end * 2: len(i_str) - start * 2]  # get the bytes we need
+        return int(i_sub or '0', 16)
+
+    def access_bit(data, num):
+        base = int(num // 8)
+        shift = int(num % 8)
+        return (data[base] >> shift) & 0x1
+
+    def access_bits(data, start, end):
+        for x in (start, end):
+            base = int(x // 8)
+            shift = int(x % 8)
+            return (data[base] >> shift) & 0x1
+
+
 
 
 def main(args=None):
@@ -92,36 +106,40 @@ def main(args=None):
             print("CAN NOT CONNECTED")
             time.sleep(5)
 
-    while not kin.bridge.is_connected:
-        try:
-            print("BRIDGE CONNECTED")
-            kin.bridge.run()
-        except:
-            print("BRIDGE NOT CONNECTED")
-            time.sleep(5)
+    # while not kin.bridge.is_connected:
+    #     try:
+    #         print("BRIDGE CONNECTED")
+    #         kin.bridge.run()
+    #     except:
+    #         print("BRIDGE NOT CONNECTED")
+    #         time.sleep(5)
 
     while True:
-        gnss_message = kin.recv_can(kin.gnss, kin.gnss_id, "GNSS")
-        gbsd_message = kin.recv_can(kin.gbsd, kin.gbsd_id, "GBSD")
-        # pd_message = kin.recv_raw_can(kin.gbsd_id)
+        gnss_message = kin.recv_can(kin.gnss, kin.gnss_id)
+        gbsd_message = kin.recv_can(kin.gbsd, kin.gbsd_id)
+        pd_message = kin.recv_raw_can(kin.pd_id)
+        hexd = pd_message.data.bin()
+        print(pd_message)
+        print(hexd)
+        # bytes_as_bits = ''.join(format(ord(bytes.fromhex(pd_message.data.hex())), '08b')[::-1] for byte in bytes)
+        # wanted = pd_message.data[4:].hex()
+        # print(wanted)
+        # pd_message = kin.recv_can(kin.pd, kin.pd_id)
 
-        print("---")
-
-        if gbsd_message != None:
-            kin.send_topic(kin.speed_topic, {'data': float(gbsd_message["GroundBasedMachineSpeed"])})
-        if gnss_message != None:
-            kin.send_topic(kin.longitude_topic, {'data': float(gnss_message["Longitude"])})
-            kin.send_topic(kin.latitude_topic, {'data': float(gnss_message["Latitude"])})
+        # kin.send_topic(kin.speed_topic, {'data': float(gbsd_message["GroundBasedMachineSpeed"])})
+        # kin.send_topic(kin.longitude_topic, {'data': float(gnss_message["Longitude"])})
+        # kin.send_topic(kin.latitude_topic, {'data': float(gnss_message["Latitude"])})
         #kin.send_topic(kin.atiw_topic, {'data': float(pd_message["AccumulatedTimeInWork"])})
-        if (gnss_message != None) and (gbsd_message != None):
-            kin.send_topic(kin.odometry_topic, {
-                "pose": {
-                    "pose": {
-                        "position": {"x": float(gnss_message["Longitude"]), "y": float(gnss_message["Latitude"])}
-                    }
-                },
-                "header": {"frame_id": "odom"}
-            })
+        # kin.send_topic(kin.odometry_topic, {
+        #     "pose": {
+        #         "pose": {
+        #             "position": {"x": float(gnss_message["Longitude"]), "y": float(gnss_message["Latitude"])}
+        #         }
+        #     },
+        #     "header": {"frame_id": "odom"}
+        # })
         # kin.sleep()
+
+
 if __name__ == '__main__':
     main()
