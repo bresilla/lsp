@@ -65,8 +65,6 @@
 #     send_can(can.Message(is_extended_id=True, arbitration_id=tim.frame_id, data=tim.encode({'Process_Mulfunction': 1})))
 #     time.sleep(sleeptime)
 
-
-
 #---------------------------------------
 
 import can
@@ -129,9 +127,9 @@ def send_can(message):
 
 sleeptime = 0.1
 while True:
-    # send_can(msg1)
-    print(msg0.data[0])
-    # time.sleep(sleeptime)
+    send_can(msg0)
+    # print(msg0.data[0])
+    time.sleep(sleeptime)
 
     # send_can(msg0)
     # time.sleep(sleeptime)
