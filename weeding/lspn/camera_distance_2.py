@@ -21,6 +21,19 @@ if os.name == 'nt':
 else:
     bus = can.interface.Bus(channel='vcan0', bustype='socketcan')
 
+can_ids = [217991673, 167248382]
+
+filters = []
+for can_id in can_ids:
+    filter = can.Filter(
+        can_id=can_id,
+        can_mask= 0x1FFFFFFF,
+        extended_id=True
+    )
+    filters.append(filter)
+
+# bus.set_filters(filters)
+
 dbc = """VERSION ""
 BO_ 2365475321 GBSD: 8 Vector__XXX
   SG_ GroundBasedMachineSpeed : 0|16@1+ (0.001,0) [0|64.255] "m/s" Vector__XXX
