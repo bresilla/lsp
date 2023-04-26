@@ -6,6 +6,49 @@ import os
 import time
 import numpy as np
 import matplotlib.pyplot as plt
+from haversine import haversine
+
+
+class Kinematics():
+    def __init__(self):
+        self.iters = 5
+        self.canbus = None
+        self.dbc = """VERSION ""
+        BO_ 2365475321 GBSD: 8 Vector__XXX
+         SG_ GroundBasedMachineSpeed : 0|16@1+ (0.001,0) [0|64.255] "m/s" Vector__XXX
+        BO_ 2314732030 GNSSPositionRapidUpdate: 8 Bridge
+         SG_ Longitude : 32|32@1- (1E-007,0) [-180|180] "deg" Vector__XXX
+         SG_ Latitude : 0|32@1- (1E-007,0) [-90|90] "deg" Vector__XXX
+        """
+
+        self.gbsd_id = 217991673
+        self.gbsd = cantools.db.load_string(self.dbc, 'dbc').get_message_by_name("GBSD")
+        self.gnss_id = 167248382
+        self.gnss = cantools.db.load_string(self.dbc, 'dbc').get_message_by_name("GNSSPositionRapidUpdate")
+
+    def recv_can(self, db, id, description):
+        data = None
+        for e in range(10):
+            try:
+                message = self.canbus.recv()
+                if message.arbitration_id == id:
+                    data = db.decode(message.data)
+                    break
+            except can.CanError:
+                print("MESSAGE NOT RECIEVED")
+        if data == None: print("MESSAGE ", description, " NOT AVALIABLE")
+        return data
+    
+kin = Kinematics()
+try:
+    kin.canbus = can.interface.Bus(channel='vcan0', bustype='socketcan')
+    print("CAN CONNECTED")
+except:
+    print("CAN NOT CONNECTED")
+    exit()
+
+prev = None
+dist = 0
 
 def counter(img, display, title):
     y, x = int(img.shape[0]/2), 0
@@ -85,6 +128,8 @@ else:
 timenow = datetime.datetime.now()
 folder_name = base_folder + sep + str(timenow.strftime("%Y%m%d")) + sep
 
+
+
 # This can be customized to pass multiple parameters
 def getPipeline(device_type):
     pipeline = dai.Pipeline()
@@ -133,6 +178,19 @@ with contextlib.ExitStack() as stack:
         q_rgb_list.append((q_rgb, stream_name, date_folder))
 
     while True:
+        gnss_message = kin.recv_can(kin.gnss, kin.gnss_id, "GNSS")
+        print("--------------------------------------------------")
+        if gnss_message != None:
+            lon=gnss_message["Longitude"]
+            lat=gnss_message["Latitude"]
+            if prev is None:
+                prev = [lat, lon]
+                continue
+            delta=haversine((prev[0], prev[1]), (lat, lon))
+            dist = dist + delta
+            prev = [lat, lon]
+            print(dist*1000)
+
         cpt += 1
         timenow = datetime.datetime.now()
         in_milisec = str(timenow.strftime("%H_%M_%S_%f"))
@@ -142,7 +200,7 @@ with contextlib.ExitStack() as stack:
                 frame = in_rgb.getCvFrame()
                 _, pixels = counter(frame, True, stream_name)
                 txtfile = date_folder + "__" + stream_name + ".csv"
-                with open(txtfile, "a") as f: f.write(f"{in_milisec}, {pixels}\n")
+                with open(txtfile, "a") as f: f.write(f"{in_milisec}, {dist} ,{pixels}\n")
                 cv2.imshow(stream_name, frame)
                 cv2.imwrite(date_folder + "image_" + in_milisec + "_" + stream_name + "_%06i" % cpt + ".jpg", frame)
         time.sleep(0.25)
