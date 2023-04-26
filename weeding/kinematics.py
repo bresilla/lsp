@@ -25,10 +25,10 @@ class Kinematics():
         self.gnss_id = 0x01F80194
         self.gnss = cantools.db.load_string(self.dbc, 'dbc').get_message_by_name("GNSSPositionRapidUpdate")
 
-        self.speed_topic = roslibpy.Topic(self.bridge, '/lsp1/speed', 'std_msgs/Float32')
-        self.longitude_topic = roslibpy.Topic(self.bridge, '/lsp1/longitude', 'std_msgs/Float32')
-        self.latitude_topic = roslibpy.Topic(self.bridge, '/lsp1/latitude', 'std_msgs/Float32')
-        self.odometry_topic = roslibpy.Topic(self.bridge, '/lsp1/odometry', 'nav_msgs/Odometry')
+        self.speed_topic = roslibpy.Topic(self.bridge, '/lspn/speed', 'std_msgs/Float32')
+        self.longitude_topic = roslibpy.Topic(self.bridge, '/lspn/longitude', 'std_msgs/Float32')
+        self.latitude_topic = roslibpy.Topic(self.bridge, '/lspn/latitude', 'std_msgs/Float32')
+        self.odometry_topic = roslibpy.Topic(self.bridge, '/lspn/odometry', 'nav_msgs/Odometry')
 
     def send_can(self, message):
         try:
@@ -114,8 +114,6 @@ def main(args=None):
                 },
                 "header": {"frame_id": "odom"}
             })
-        # kin.sleep()
-
 
 if __name__ == '__main__':
     main()

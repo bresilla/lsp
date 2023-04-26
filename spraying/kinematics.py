@@ -18,8 +18,6 @@ class Kinematics():
         BO_ 2314732030 GNSSPositionRapidUpdate: 8 Bridge
          SG_ Longitude : 32|32@1- (1E-007,0) [-180|180] "deg" Vector__XXX
          SG_ Latitude : 0|32@1- (1E-007,0) [-90|90] "deg" Vector__XXX
-        BO_ 2362179326 PD: 14 Vector__XXX
-         SG_ AccumulatedTimeInWork m119 : 32|32@1- (1,0) [0|2147483647] "s" Vector__XXX
         """
 
         self.gbsd_id = 0x0CFE49F0
@@ -33,8 +31,6 @@ class Kinematics():
         self.longitude_topic = roslibpy.Topic(self.bridge, '/lsp3/longitude', 'std_msgs/Float32')
         self.latitude_topic = roslibpy.Topic(self.bridge, '/lsp3/latitude', 'std_msgs/Float32')
         self.odometry_topic = roslibpy.Topic(self.bridge, '/lsp3/odometry', 'nav_msgs/Odometry')
-
-        self.atiw_topic = roslibpy.Topic(self.bridge, '/lsp3/acumulated_time_in_work', 'std_msgs/Float32')
 
     def send_can(self, message):
         try:
@@ -52,7 +48,7 @@ class Kinematics():
                 message = self.canbus.recv()
                 if message.arbitration_id == id:
                     data = db.decode(message.data)
-                    print(data)
+                    print(data) 
             except can.CanError:
                 print("MESSAGE NOT RECIEVED")
         if data == None: print("MESSAGE ", description, " NOT AVALIABLE")
@@ -94,8 +90,8 @@ def main(args=None):
 
     while not kin.bridge.is_connected:
         try:
-            print("BRIDGE CONNECTED")
             kin.bridge.run()
+            print("BRIDGE CONNECTED")
         except:
             print("BRIDGE NOT CONNECTED")
             time.sleep(5)

@@ -6,7 +6,7 @@ import time
 class Trigger():
     def __init__(self):
         self.sleeper = 1
-        self.bridge = roslibpy.Ros(host="150.140.148.140", port=2233)
+        self.bridge = roslibpy.Ros(host="10.147.17.52", port=2233)
         self.trigger = roslibpy.Topic(self.bridge, "/lspn/trigger_flag", 'std_msgs/Bool')
 
     def send_topic(self, topic, message):
@@ -25,8 +25,8 @@ def main(args=None):
             print("BRIDGE CONNECTED")
             trig.bridge.run()
         except:
-            print("BRIDGE NOT CONNECTED")
             time.sleep(5)
+            print("BRIDGE NOT CONNECTED")
 
     while True:
         trig.send_topic(trig.trigger, {'data': True})

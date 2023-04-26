@@ -7,7 +7,7 @@ class Trigger():
     def __init__(self):
         self.sleeper = 1
         self.bridge = roslibpy.Ros(host="150.140.148.140", port=2233)
-        self.trigger = roslibpy.Topic(self.bridge, "/lsp3/trigger_flag", 'std_msgs/Bool')
+        self.trigger = roslibpy.Topic(self.bridge, "/lspg/trigger_flag", 'std_msgs/Bool')
 
     def send_topic(self, topic, message):
         topic.publish(roslibpy.Message(message))
@@ -29,7 +29,7 @@ def main(args=None):
             time.sleep(5)
 
     while True:
-        trig.send_topic(trig.trigger, {'data': False})
+        trig.send_topic(trig.trigger, {'data': True})
         trig.sleep()
 
 
